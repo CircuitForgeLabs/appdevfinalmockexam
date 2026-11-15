@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practice Exam — App Dev II | ISU Santiago</title>
+<style>
+  :root {
+    --bg: #0b0f17; --panel: #141a24; --panel-2: #1b2330; --border: #263042;
+    --text: #e6edf3; --muted: #9aa7b8; --accent: #4ade80; --accent-2: #38bdf8;
+    --warn: #fbbf24; --danger: #f87171; --radius: 14px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---------- Header ---------- */
+  header.hero {
+    padding: 48px 0 32px;
+    background: radial-gradient(700px 360px at 15% 0%, rgba(74,222,128,.12), transparent 60%),
+                radial-gradient(600px 360px at 85% 10%, rgba(56,189,248,.12), transparent 60%);
+    border-bottom: 1px solid var(--border);
+  }
+  .subject-tag {
+    display: inline-block; font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 16px;
+  }
+  h1 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); letter-spacing: -.02em; margin-bottom: 6px; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: .95rem; }
+  .school { color: var(--accent-2); font-weight: 600; font-size: .9rem; margin-top: 4px; letter-spacing: .02em; }
+
+  /* ---------- Progress / stats ---------- */
+  .statbar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 20px; margin: 24px 0;
+  }
+  .stat { font-size: .82rem; color: var(--muted); }
+  .stat b { color: var(--text); font-size: .95rem; }
+  .progress-wrap { flex: 1 1 260px; min-width: 200px; }
+  .progress-bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); border-radius: 999px; transition: width .3s; }
+  .progress-label { font-size: .75rem; color: var(--muted); margin-top: 4px; text-align: right; }
+
+  /* ---------- Question card ---------- */
+  .qcard {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 32px; margin-bottom: 24px;
+  }
+  .qmeta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .76rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+    margin-bottom: 18px;
+  }
+  .qmeta .qnum { color: var(--accent-2); font-weight: 700; }
+  .qmeta .unit { background: var(--panel-2); border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px; font-size: .68rem; }
+  .qtext { font-size: 1.12rem; line-height: 1.5; margin-bottom: 22px; font-weight: 500; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 18px; border-radius: 11px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    cursor: pointer; transition: .15s; font-size: .95rem;
+  }
+  .option:hover:not(.locked) { border-color: var(--accent-2); background: #1e2735; }
+  .option.locked { cursor: default; }
+  .opt-letter {
+    flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--bg);
+    font-weight: 700; font-size: .82rem; color: var(--muted);
+  }
+  .option.selected { border-color: var(--accent-2); background: rgba(56,189,248,.08); }
+  .option.selected .opt-letter { background: var(--accent-2); color: #0b0f17; border-color: var(--accent-2); }
+  .option.correct { border-color: var(--accent); background: rgba(74,222,128,.1); }
+  .option.correct .opt-letter { background: var(--accent); color: #0b0f17; border-color: var(--accent); }
+  .option.wrong { border-color: var(--danger); background: rgba(248,113,113,.08); }
+  .option.wrong .opt-letter { background: var(--danger); color: #0b0f17; border-color: var(--danger); }
+
+  .feedback {
+    margin-top: 18px; padding: 14px 18px; border-radius: 10px; font-size: .9rem;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .feedback.ok { background: rgba(74,222,128,.08); border: 1px solid rgba(74,222,128,.3); }
+  .feedback.no { background: rgba(248,113,113,.08); border: 1px solid rgba(248,113,113,.3); }
+  .feedback .ico { font-size: 1.1rem; }
+  .feedback strong { display: block; margin-bottom: 2px; }
+  .feedback.ok strong { color: var(--accent); }
+  .feedback.no strong { color: var(--danger); }
+  .feedback p { color: var(--muted); }
+
+  /* ---------- Buttons ---------- */
+  .nav-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  .nav-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 22px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text); font-size: .88rem; font-weight: 600;
+    cursor: pointer; transition: .15s; font-family: var(--font);
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.primary { background: var(--accent); color: #0b0f17; border-color: var(--accent); }
+  .btn.primary:hover:not(:disabled) { filter: brightness(1.1); color: #0b0f17; }
+  .btn.ghost { background: transparent; }
+  .btn.danger { border-color: rgba(248,113,113,.4); color: var(--danger); }
+  .btn.danger:hover:not(:disabled) { background: rgba(248,113,113,.1); border-color: var(--danger); color: var(--danger); }
+
+  /* ---------- Start / Result screens ---------- */
+  .screen {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 48px 36px; text-align: center;
+  }
+  .screen h2 { font-size: 1.5rem; margin-bottom: 10px; }
+  .screen p { color: var(--muted); max-width: 520px; margin: 0 auto 24px; }
+  .screen .icon { font-size: 3rem; margin-bottom: 16px; }
+
+  .score-ring {
+    width: 160px; height: 160px; border-radius: 50%;
+    display: grid; place-items: center; margin: 0 auto 24px;
+    background: conic-gradient(var(--accent) var(--pct), var(--border) 0);
+  }
+  .score-inner {
+    width: 128px; height: 128px; border-radius: 50%; background: var(--panel);
+    display: grid; place-items: center; text-align: center;
+  }
+  .score-inner .big { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+  .score-inner .small { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+
+  .breakdown {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px; margin: 28px 0; text-align: left;
+  }
+  .bd-item {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .bd-item .n { font-size: 1.4rem; font-weight: 700; }
+  .bd-item .l { font-size: .74rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .bd-item.ok .n { color: var(--accent); }
+  .bd-item.no .n { color: var(--danger); }
+
+  /* ---------- Review ---------- */
+  .review-item {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 14px;
+  }
+  .review-item.ok { border-left: 4px solid var(--accent); }
+  .review-item.no { border-left: 4px solid var(--danger); }
+  .review-head {
+    display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .review-head .rn { font-weight: 700; color: var(--accent-2); }
+  .review-head .badge {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .08em;
+    padding: 3px 10px; border-radius: 999px; font-weight: 700; white-space: nowrap;
+  }
+  .badge.ok { background: rgba(74,222,128,.15); color: var(--accent); }
+  .badge.no { background: rgba(248,113,113,.15); color: var(--danger); }
+  .review-q { font-size: .95rem; margin-bottom: 12px; }
+  .review-a { font-size: .85rem; color: var(--muted); }
+  .review-a b { color: var(--text); }
+  .review-a .yours { color: var(--danger); }
+  .review-a .correct { color: var(--accent); }
+
+  .hidden { display: none !important; }
+  footer { border-top: 1px solid var(--border); padding: 28px 0; text-align: center; color: var(--muted); font-size: .8rem; margin-top: 48px; }
+
+  @media (max-width: 600px) {
+    .qcard { padding: 22px; }
+    .screen { padding: 32px 20px; }
+    .qtext { font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="subject-tag">Practice Examination</span>
+    <h1>App Dev II — <span>Web Security</span></h1>
+    <div class="subtitle">React · Supabase · Vercel · GitHub</div>
+    <div class="school">ISU Santiago</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ START SCREEN ============ -->
+  <section id="screen-start" class="screen" style="margin-top:32px;">
+    <div class="icon">🛡️</div>
+    <h2>Ready to begin?</h2>
+    <p>
+      This practice exam contains <strong>50 multiple-choice items</strong> on web application security.
+      Questions and answer options are <strong>shuffled randomly</strong> each attempt.
+      You get instant feedback per question, and a full review at the end.
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn primary" id="btnStart">▶ Start Practice Exam</button>
+      <button class="btn ghost" id="btnStart10">⚡ Quick 10-Item Drill</button>
+    </div>
+  </section>
+
+  <!-- ============ EXAM SCREEN ============ -->
+  <section id="screen-exam" class="hidden">
+    <div class="statbar">
+      <div class="stat">Question <b id="stat-q">1</b> / <b id="stat-total">50</b></div>
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">0 answered</div>
+      </div>
+      <div class="stat">Score <b id="stat-score" style="color:var(--accent)">0</b></div>
+    </div>
+
+    <div class="qcard" id="qcard">
+      <div class="qmeta">
+        <span class="qnum" id="qnum">Question 1</span>
+        <span class="unit" id="qunit">Supabase</span>
+      </div>
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="qoptions"></div>
+      <div class="feedback hidden" id="feedback"></div>
+    </div>
+
+    <div class="nav-row">
+      <div class="nav-group">
+        <button class="btn ghost" id="btnPrev">← Previous</button>
+        <button class="btn ghost" id="btnNext">Next →</button>
+      </div>
+      <button class="btn danger" id="btnFinish">Finish Exam</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section id="screen-result" class="hidden">
+    <div class="screen" style="margin-top:32px;">
+      <div class="icon" id="resultIcon">🎉</div>
+      <h2 id="resultTitle">Exam Complete!</h2>
+      <p id="resultMsg">Here's how you did.</p>
+
+      <div class="score-ring" id="scoreRing" style="--pct:0%">
+        <div class="score-inner">
+          <div>
+            <div class="big" id="scoreBig">0</div>
+            <div class="small">Score</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="breakdown">
+        <div class="bd-item ok"><div class="n" id="bdCorrect">0</div><div class="l">Correct</div></div>
+        <div class="bd-item no"><div class="n" id="bdWrong">0</div><div class="l">Incorrect</div></div>
+        <div class="bd-item"><div class="n" id="bdPct">0%</div><div class="l">Percentage</div></div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn primary" id="btnRetry">🔄 Try Again (Reshuffle)</button>
+        <button class="btn" id="btnReview">📖 Review Answers</button>
+      </div>
+    </div>
+
+    <div id="reviewSection" class="hidden" style="margin-top:32px;">
+      <h2 style="font-size:1.2rem;margin-bottom:16px;">Review</h2>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+</div>
+
+<footer>App Dev II — ISU Santiago · Practice Exam · Security Module</footer>
+
+<script>
+/* ============================================================
+   QUESTION BANK (50 items)
+   Format: [question, [A,B,C,D], correctIndex(0-3), unitLabel]
+   ============================================================ */
+const BANK = [
+  // ---- Unit I: Supabase ----
+  ["What does the acronym RLS stand for in Supabase?",
+   ["Rapid Load System","Row Level Security","Remote Login Service","Relational Link Schema"],1,"Supabase"],
+  ["Which Supabase key bypasses Row Level Security entirely?",
+   ["The anon key","The publishable key","The service_role (secret) key","The JWT signing key"],2,"Supabase"],
+  ["Where is it safe to place the Supabase publishable (anon) key?",
+   ["Only in a backend server","In the browser/frontend, if RLS is enabled","Only in environment variables never committed","Nowhere — it must always be hidden"],1,"Supabase"],
+  ["What does Row Level Security check on every database request?",
+   ["Only the request size","Every row against your policy rules","The user's IP address only","The database schema version"],1,"Supabase"],
+  ["What happens to a table's data if RLS is disabled and the anon key is public?",
+   ["Nothing — the data stays private","Only read access is exposed","Anyone with the key can read, edit, or delete everything","Writes are blocked but reads are exposed"],2,"Supabase"],
+  ["What role does the user's JWT play in RLS evaluation?",
+   ["It encrypts the database","RLS uses it to verify user identity (e.g., auth.uid())","It bypasses all policies","It stores the database password"],1,"Supabase"],
+  ["How does the service_role key differ from the anon key in terms of security?",
+   ["They are identical in privilege","service_role bypasses RLS; anon is limited by RLS","anon bypasses RLS; service_role is limited","Both are always blocked by RLS"],1,"Supabase"],
+  ["How would you write an RLS policy that lets users read only their own rows?",
+   ["USING (true)","USING (auth.uid() = user_id)","USING (id > 0)","USING (role = 'admin')"],1,"Supabase"],
+  ["Which key should a React frontend use to talk to Supabase?",
+   ["The service_role key","The publishable/anon key","The database superuser password","Any key, as long as HTTPS is used"],1,"Supabase"],
+  ["Why should auth.uid() be wrapped as (select auth.uid()) in a policy?",
+   ["It encrypts the user ID","Postgres caches the result once per query instead of per row","It disables RLS for that column","It forces the user to log in again"],1,"Supabase"],
+  ["What performance problem occurs when auth.uid() is called per row instead of once per query?",
+   ["Memory leaks","Slow table scans and per-row function calls","Automatic policy deletion","Loss of JWT validity"],1,"Supabase"],
+  ["What is the first thing to check when a table's data appears publicly readable?",
+   ["Whether RLS is enabled on that table","Whether the frontend is using React","Whether the database is in the cloud","Whether the table has an index"],0,"Supabase"],
+  ["What can an attacker do with an exposed anon key on a table without RLS?",
+   ["Nothing without the service key","Only read data","Read, edit, or delete all rows","Only insert new rows"],2,"Supabase"],
+  ["Why is a policy of true for all operations considered dangerous?",
+   ["It is slower than other policies","It grants unrestricted access to every user","It breaks the frontend","It disables the JWT"],1,"Supabase"],
+  ["How would you design an RLS policy for a profiles table where users may only update their own row?",
+   ["USING (true) WITH CHECK (true)","USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id)","USING (id = 1)","No policy is needed for UPDATE"],1,"Supabase"],
+
+  // ---- Unit II: React ----
+  ["What does React escape by default when rendering text?",
+   ["HTML tags and entities","Text content","JavaScript expressions","CSS styles"],1,"React"],
+  ["Which React prop allows raw HTML injection?",
+   ["innerText","dangerouslySetInnerHTML","textContent","renderHTML"],1,"React"],
+  ["What library is commonly used to sanitize HTML before rendering in React?",
+   ["Lodash","DOMPurify","Axios","Redux"],1,"React"],
+  ["Why is the React virtual DOM considered safe by default?",
+   ["It encrypts all content","It escapes text and does not evaluate injected markup","It blocks all user input","It runs in a sandbox"],1,"React"],
+  ["What risk does dangerouslySetInnerHTML introduce if unsanitized?",
+   ["Slower rendering only","XSS via injected scripts/handlers","Memory leaks","CORS errors"],1,"React"],
+  ["What happens when a user-supplied javascript: URL is placed in an <a href>?",
+   ["The browser strips it automatically","The browser executes JavaScript in the page context when clicked","React throws a compile error","Nothing — href is always safe"],1,"React"],
+  ["Which environment-variable prefixes make a value publicly visible in a React bundle?",
+   ["SECRET_ and PRIVATE_","REACT_APP_ and VITE_","DB_ and API_","NODE_ and ENV_"],1,"React"],
+  ["How should user-generated HTML be prepared before rendering in React?",
+   ["Base64-encode it","Sanitize with DOMPurify at render time","Store it in Redux","Pass it through JSON.parse"],1,"React"],
+  ["How would you allowlist URL protocols before rendering a user-supplied link?",
+   ["Use a regex that allows all protocols","Parse the URL and allow only http, https, and mailto","Convert the link to a button","Always prepend https://"],1,"React"],
+  ["Where should session tokens be stored to reduce XSS impact?",
+   ["In localStorage","In React state","In HttpOnly cookies","In a global variable"],2,"React"],
+  ["What XSS vector exists in <a href={userInput}> and how is it exploited?",
+   ["SQL injection via the href","The javascript: scheme executes on click","CSS injection via href","Nothing — href cannot run code"],1,"React"],
+  ["What is the risk of exposing a VITE_ variable that contains a secret?",
+   ["Vite refuses to build","The secret is embedded in the public bundle","The variable becomes undefined","Only the server sees it"],1,"React"],
+  ["What exposure results from storing API secrets in React state or Context?",
+   ["None — state is private","Anyone with DevTools can read it","State is encrypted at rest","Redux blocks external reads"],1,"React"],
+  ["Why must rich-text content be sanitized at render time rather than only at storage time?",
+   ["Storage is more expensive","Storage-time sanitization can be bypassed; render-time is the last line of defense","Render-time sanitization is faster","Browsers only sanitize at render"],1,"React"],
+  ["How would you design a safe rendering strategy for user-submitted rich text?",
+   ["Inject raw HTML with dangerouslySetInnerHTML","Sanitize on render with an allowlist-based sanitizer and avoid raw injection where possible","Store HTML and trust the database","Disable all user input"],1,"React"],
+
+  // ---- Unit III: Vercel ----
+  ["What is the default visibility of a Vercel Preview deployment URL?",
+   ["Private to the project owner only","Public — accessible to anyone with the URL","Password-protected by default","Blocked until production merge"],1,"Vercel"],
+  ["Which file is used to declare security headers on Vercel?",
+   [".env","vercel.json","package.json","robots.txt"],1,"Vercel"],
+  ["Why must Preview deployments avoid production secrets?",
+   ["Previews are slower","A leaked preview URL would expose production data","Preview env vars cannot be read","Vercel deletes them automatically"],1,"Vercel"],
+  ["What does the X-Frame-Options: DENY header protect against?",
+   ["XSS in scripts","Clickjacking (framing of your site)","SQL injection","Cookie theft via HTTP"],1,"Vercel"],
+  ["What is the risk of leaving source maps enabled in production?",
+   ["Slower page loads only","Original source code becomes readable in DevTools","The build fails","Vercel refuses to deploy"],1,"Vercel"],
+  ["How do you restrict access to Preview deployments in Vercel?",
+   ["Use a longer URL","Enable Vercel Authentication under Deployment Protection","Add a robots.txt rule","Disable HTTPS"],1,"Vercel"],
+  ["How would you add X-Content-Type-Options: nosniff via vercel.json?",
+   ["Add it to package.json scripts","Add a headers entry with key: \"X-Content-Type-Options\" and value: \"nosniff\"","Set it in .env","Add it to robots.txt"],1,"Vercel"],
+  ["What cross-environment leak occurs when Preview uses the production Supabase key?",
+   ["None — Preview is sandboxed","Preview deployments can read/write production data","Only reads are exposed","Supabase blocks Preview requests"],1,"Vercel"],
+  ["What attack becomes possible if a production site lacks frame-protection headers?",
+   ["SQL injection","Clickjacking","DDoS","CSRF via forms only"],1,"Vercel"],
+  ["Why is separating Production and Preview environment variables a security requirement?",
+   ["It reduces costs","It prevents a preview leak from becoming a production breach","It speeds up builds","It enables HTTPS"],1,"Vercel"],
+
+  // ---- Unit IV: GitHub ----
+  ["Which GitHub feature blocks a push that contains a detected secret?",
+   ["Dependabot","Push protection (secret scanning)","Branch protection","Actions"],1,"GitHub"],
+  ["Which file lists paths that Git should ignore?",
+   ["package.json",".gitignore","README.md","vercel.json"],1,"GitHub"],
+  ["Why does a deleted secret remain compromised after removal from a file?",
+   ["It is cached by browsers","Git history retains the value forever","It is stored in .gitignore","GitHub re-uploads it"],1,"GitHub"],
+  ["What is the purpose of branch protection on main?",
+   ["Prevent unreviewed or broken code from reaching production","Encrypt the repository","Automatically delete branches","Disable pull requests"],0,"GitHub"],
+  ["What do Dependabot alerts notify you about?",
+   ["New GitHub features","Known vulnerabilities in dependencies","Failing tests","Expired API keys"],1,"GitHub"],
+  ["How do you enable push protection for secret scanning on a repository?",
+   ["Settings → Code security → enable Secret scanning + Push protection","Add a .env file","Enable GitHub Pages","Use a personal access token"],0,"GitHub"],
+  ["How would you prevent .env from being committed to a repository?",
+   ["Add .env to .gitignore before any git add","Run git rm after committing","Password-protect the repo","Use SSH instead of HTTPS"],0,"GitHub"],
+  ["What should be done immediately after a .env file is committed by mistake?",
+   ["Delete the file and continue","Rotate the exposed keys immediately in Supabase/Vercel","Rename the file","Ignore it if the repo is private"],1,"GitHub"],
+  ["How do attackers locate exposed API keys in public repositories?",
+   ["By manually reading each repo","Automated scanning of public repos","By guessing URLs","Through GitHub support tickets"],1,"GitHub"],
+  ["Why is enabling both secret scanning and branch protection considered a minimum security baseline?",
+   ["They are required by GitHub","Together they block leaks at the source and gate what reaches production","They speed up deployments","They replace code reviews"],1,"GitHub"]
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let quiz = [];        // active question list (shuffled, each with shuffled options)
+let current = 0;
+let answers = [];     // selected option index (in shuffled option array) or null
+let locked = [];      // whether the question has been answered/locked
+const LETTERS = ['A','B','C','D'];
+
+/* ---------- Helpers ---------- */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Build a shuffled quiz. Each item stores the original correct text,
+// and the shuffled options with the new correct index.
+function buildQuiz(count) {
+  const picked = shuffle(BANK).slice(0, count);
+  return picked.map(([q, opts, correctIdx, unit]) => {
+    const correctText = opts[correctIdx];
+    // pair each option with a random sort key, then re-derive correct index
+    const pairs = opts.map(o => ({ text: o, sort: Math.random() }));
+    pairs.sort((a, b) => a.sort - b.sort);
+    const newOpts = pairs.map(p => p.text);
+    const newCorrect = newOpts.indexOf(correctText);
+    return { q, opts: newOpts, correct: newCorrect, unit };
+  });
+}
+
+/* ============================================================
+   SCREENS
+   ============================================================ */
+const screens = {
+  start: document.getElementById('screen-start'),
+  exam: document.getElementById('screen-exam'),
+  result: document.getElementById('screen-result')
+};
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+function startQuiz(count) {
+  quiz = buildQuiz(count);
+  current = 0;
+  answers = new Array(quiz.length).fill(null);
+  locked = new Array(quiz.length).fill(false);
+  document.getElementById('stat-total').textContent = quiz.length;
+  document.getElementById('reviewSection').classList.add('hidden');
+  showScreen('exam');
+  renderQuestion();
+}
+
+document.getElementById('btnStart').addEventListener('click', () => startQuiz(50));
+document.getElementById('btnStart10').addEventListener('click', () => startQuiz(10));
+document.getElementById('btnRetry').addEventListener('click', () => {
+  showScreen('start');
+});
+
+/* ============================================================
+   RENDER QUESTION
+   ============================================================ */
+function renderQuestion() {
+  const item = quiz[current];
+  const answered = locked[current];
+
+  // meta
+  document.getElementById('qnum').textContent = `Question ${current + 1}`;
+  document.getElementById('qunit').textContent = item.unit;
+  document.getElementById('qtext').textContent = item.q;
+
+  // options
+  const optWrap = document.getElementById('qoptions');
+  optWrap.innerHTML = '';
+  item.opts.forEach((text, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    if (answered) div.classList.add('locked');
+
+    // state classes
+    if (answered) {
+      if (i === item.correct) div.classList.add('correct');
+      else if (i === answers[current]) div.classList.add('wrong');
+    } else if (answers[current] === i) {
+      div.classList.add('selected');
+    }
+
+    div.innerHTML = `<span class="opt-letter">${LETTERS[i]}</span><span>${text}</span>`;
+    if (!answered) {
+      div.addEventListener('click', () => selectOption(i));
+    }
+    optWrap.appendChild(div);
+  });
+
+  // feedback
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback hidden';
+  if (answered) {
+    const isCorrect = answers[current] === item.correct;
+    fb.className = 'feedback ' + (isCorrect ? 'ok' : 'no');
+    fb.innerHTML = isCorrect
+      ? `<span class="ico">✅</span><div><strong>Correct!</strong><p>${item.opts[item.correct]}</p></div>`
+      : `<span class="ico">❌</span><div><strong>Incorrect</strong><p>Correct answer: <b>${LETTERS[item.correct]}. ${item.opts[item.correct]}</b></p></div>`;
+  }
+
+  // nav buttons
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').disabled = current === quiz.length - 1;
+
+  updateStats();
+}
+
+/* ============================================================
+   SELECT / LOCK
+   ============================================================ */
+function selectOption(i) {
+  if (locked[current]) return;
+  answers[current] = i;
+  locked[current] = true;
+  renderQuestion();
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+function updateStats() {
+  document.getElementById('stat-q').textContent = current + 1;
+  const answeredCount = locked.filter(Boolean).length;
+  const pct = (answeredCount / quiz.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${answeredCount} answered`;
+  const score = quiz.reduce((acc, q, i) => acc + (locked[i] && answers[i] === q.correct ? 1 : 0), 0);
+  document.getElementById('stat-score').textContent = score;
+}
+
+/* ============================================================
+   NAV
+   ============================================================ */
+document.getElementById('btnPrev').addEventListener('click', () => {
+  if (current > 0) { current--; renderQuestion(); }
+});
+document.getElementById('btnNext').addEventListener('click', () => {
+  if (current < quiz.length - 1) { current++; renderQuestion(); }
+});
+document.getElementById('btnFinish').addEventListener('click', () => {
+  const unanswered = locked.filter(x => !x).length;
+  if (unanswered > 0) {
+    if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+  }
+  showResults();
+});
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function showResults() {
+  const total = quiz.length;
+  let correct = 0;
+  quiz.forEach((q, i) => { if (answers[i] === q.correct) correct++; });
+  const wrong = total - correct;
+  const pct = Math.round((correct / total) * 100);
+
+  document.getElementById('scoreBig').textContent = correct + '/' + total;
+  document.getElementById('scoreRing').style.setProperty('--pct', pct + '%');
+  document.getElementById('bdCorrect').textContent = correct;
+  document.getElementById('bdWrong').textContent = wrong;
+  document.getElementById('bdPct').textContent = pct + '%';
+
+  let icon, title, msg;
+  if (pct >= 90)      { icon='🏆'; title='Outstanding!';  msg='You have mastered the security fundamentals.'; }
+  else if (pct >= 75) { icon='🎉'; title='Great job!';    msg='Strong performance — review the few misses below.'; }
+  else if (pct >= 50) { icon='📚'; title='Good effort';   msg='Solid foundation. Revisit the lessons and try again.'; }
+  else                { icon='💪'; title='Keep practicing'; msg='Review the module lessons, then retry the exam.'; }
+  document.getElementById('resultIcon').textContent = icon;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultMsg').textContent = msg;
+
+  // build review
+  const reviewList = document.getElementById('reviewList');
+  reviewList.innerHTML = '';
+  quiz.forEach((q, i) => {
+    const ok = answers[i] === q.correct;
+    const yours = answers[i] === null ? '—' : `${LETTERS[answers[i]]}. ${q.opts[answers[i]]}`;
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (ok ? 'ok' : 'no');
+    div.innerHTML = `
+      <div class="review-head">
+        <span class="rn">Q${i+1} · ${q.unit}</span>
+        <span class="badge ${ok ? 'ok' : 'no'}">${ok ? 'Correct' : 'Incorrect'}</span>
+      </div>
+      <div class="review-q">${q.q}</div>
+      <div class="review-a">
+        <div>Your answer: <b class="${ok ? 'correct' : 'yours'}">${yours}</b></div>
+        ${ok ? '' : `<div>Correct answer: <b class="correct">${LETTERS[q.correct]}. ${q.opts[q.correct]}</b></div>`}
+      </div>`;
+    reviewList.appendChild(div);
+  });
+
+  showScreen('result');
+}
+
+document.getElementById('btnReview').addEventListener('click', () => {
+  const s = document.getElementById('reviewSection');
+  s.classList.toggle('hidden');
+  if (!s.classList.contains('hidden')) {
+    s.scrollIntoView({ behavior: 'smooth' });
+  }
+});
+</script>
+
+</body>
+</html>
